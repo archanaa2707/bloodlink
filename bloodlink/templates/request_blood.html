@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Blood - BloodLink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BloodLink</div>
+        <div class="nav-actions">
+            <a href="{{ url_for('people.dashboard') }}" class="btn btn-sm">Dashboard</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="form-card">
+            <h1>Request Blood</h1>
+            
+            <form method="POST" action="{{ url_for('people.request_blood') }}" id="requestForm">
+                <div class="form-group">
+                    <label>Blood Type Needed</label>
+                    <select name="blood_type" required>
+                        <option value="">Select Blood Type</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Units</label>
+                    <input type="number" name="units" min="1" max="10" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Special Requirements (Optional)</label>
+                    <textarea name="special_requirements" rows="3" placeholder="Any specific requirements..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <button type="button" class="btn btn-secondary" onclick="getLocation()">📍 Use Current Location</button>
+                    <input type="text" id="address" name="address" readonly required>
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                </div>
+                
+                <div id="map" style="height: 300px; margin: 20px 0; border-radius: 8px;"></div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Submit Request</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+</body>
+</html>

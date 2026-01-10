@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Details - BloodLink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BloodLink</div>
+        <div class="nav-actions">
+            <a href="{{ url_for('people.orders') }}" class="btn btn-sm">Back to Orders</a>
+            <a href="{{ url_for('people.dashboard') }}" class="btn btn-sm">Dashboard</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Request Details</h1>
+        
+        {% if request %}
+        <div class="request-info-card">
+            <div class="request-header">
+                <span class="blood-type-badge large">{{ request.blood_type }}</span>
+                <span class="status-badge status-{{ request.status }}">{{ request.status|upper }}</span>
+            </div>
+            
+            <div class="request-body">
+                <p><strong>Units Requested:</strong> {{ request.units }}</p>
+                <p><strong>Location:</strong> {{ request.location.address }}</p>
+                {% if request.special_requirements %}
+                <p><strong>Special Requirements:</strong> {{ request.special_requirements }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <h2 style="margin-top: 2rem;">Donors</h2>
+        
+        {% if donations %}
+            <div class="donations-list">
+                {% for donation in donations %}
+                <div class="donation-card status-{{ donation.status }}">
+                    <div class="donation-header">
+                        <h3>{{ donation.donor_name }}</h3>
+                        <span class="status-badge status-{{ donation.status }}">{{ donation.status|upper }}</span>
+                    </div>
+                    
+                    <div class="donation-body">
+                        <p><strong>Scheduled:</strong> {{ donation.donation_date }} at {{ donation.donation_time }}</p>
+                        
+                        {% if donation.status == 'pending' %}
+                        <div class="verification-section">
+                            <p><strong>Waiting for donation...</strong></p>
+                            <p class="text-muted">After the donor gives blood, enter their verification code:</p>
+                            
+                            <form onsubmit="verifyDonation(event, '{{ donation.id }}')">
+                                <div class="form-row">
+                                    <input type="text" id="code-{{ donation.id }}" placeholder="4-digit code" maxlength="4" pattern="[0-9]{4}" required style="flex: 1;">
+                                    <button type="submit" class="btn btn-primary">Verify</button>
+                                </div>
+                            </form>
+                        </div>
+                        {% elif donation.status == 'completed' %}
+                        <p class="success-text">✓ Donation verified! Thank you {{ donation.donor_name }}!</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No donors have accepted this request yet.</p>
+            </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <p>Request not found.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        async function verifyDonation(event, donationId) {
+            event.preventDefault();
+            
+            const code = document.getElementById('code-' + donationId).value;
+            const requestId = '{{ request.id }}';
+            
+            try {
+                const response = await fetch(`/people/verify-donation/${requestId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Donation verified! The donor has earned 100 blood credits.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+    
+    <style>
+        .request-info-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .donations-list {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .donation-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .donation-card.status-completed {
+            border-left: 4px solid #16a34a;
+        }
+        
+        .donation-card.status-pending {
+            border-left: 4px solid #ea580c;
+        }
+        
+        .donation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .donation-header h3 {
+            margin: 0;
+        }
+        
+        .verification-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #eff6ff;
+            border-radius: 8px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .form-row input {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+        }
+    </style>
+</body>
+</html>

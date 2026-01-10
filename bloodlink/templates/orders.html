@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders & History - BloodLink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BloodLink</div>
+        <div class="nav-actions">
+            <a href="{{ url_for('people.dashboard') }}" class="btn btn-sm">Dashboard</a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>My Orders & History</h1>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('requests')">My Requests</button>
+            <button class="tab-button" onclick="showTab('donations')">My Donations</button>
+        </div>
+        
+        <div id="requests" class="tab-content active">
+            <h2>Blood Requests I Made</h2>
+            {% if requests %}
+                <div class="orders-list">
+                    {% for req in requests %}
+                    <div class="order-card {{ req.status }}">
+                        <div class="order-header">
+                            <span class="blood-type-badge">{{ req.blood_type }}</span>
+                            <span class="status-badge status-{{ req.status }}">{{ req.status|upper }}</span>
+                        </div>
+                        <div class="order-body">
+                            <p><strong>Units:</strong> {{ req.units }}</p>
+                            <p><strong>Location:</strong> {{ req.location.address }}</p>
+                            {% if req.status == 'fulfilled' %}
+                            <p class="success-text">✓ All slots fulfilled - Thank you to our donors!</p>
+                            {% elif req.status == 'pending' %}
+                            <p class="text-muted">Waiting for donors...</p>
+                            {% endif %}
+                        </div>
+                        <div class="order-footer">
+                            <a href="{{ url_for('people.request_details', request_id=req.id) }}" class="btn btn-sm btn-secondary">
+                                View Details & Verify Donations
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>You haven't made any blood requests yet.</p>
+                    <a href="{{ url_for('people.request_blood') }}" class="btn btn-primary">Request Blood</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div id="donations" class="tab-content">
+            <h2>My Blood Donations</h2>
+            {% if donations %}
+                <div class="orders-list">
+                    {% for donation in donations %}
+                    <div class="order-card fulfilled">
+                        <div class="order-header">
+                            <span class="blood-type-badge">{{ donation.blood_type }}</span>
+                            <span class="status-badge status-{{ donation.status }}">{{ donation.status|upper }}</span>
+                        </div>
+                        <div class="order-body">
+                            <p><strong>Scheduled:</strong> {{ donation.donation_date }} at {{ donation.donation_time }}</p>
+                            <p><strong>Location:</strong> {{ donation.location.address }}</p>
+                            {% if donation.status == 'completed' %}
+                            <p class="success-text">🎉 Donation verified! You earned 100 blood credits!</p>
+                            {% elif donation.status == 'pending' %}
+                            <p class="text-muted">⏳ Waiting for requester to verify your donation</p>
+                            <p><strong>Your verification code:</strong> <span style="font-size: 1.5rem; color: #dc2626;">{{ donation.verification_code }}</span></p>
+                            <form method="POST" action="{{ url_for('people.delete_donation', donation_id=donation.id) }}" style="margin-top: 1rem;" onsubmit="return confirm('Are you sure you want to cancel this donation?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Cancel Donation</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>You haven't donated blood yet.</p>
+                    <a href="{{ url_for('people.donate_blood') }}" class="btn btn-primary">View Requests</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

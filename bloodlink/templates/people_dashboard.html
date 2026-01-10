@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BloodLink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">BloodLink</div>
+        <div class="nav-user">
+            <span>{{ user.name }}</span>
+            <span class="blood-type-badge">{{ user.blood_type }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="dashboard">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-value">{{ user.donations or 0 }}</div>
+                <div class="stat-label">Donations Made</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-value">{{ user.requests or 0 }}</div>
+                <div class="stat-label">Requests Made</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <div class="stat-value">{{ user.blood_credits or 0 }}</div>
+                <div class="stat-label">Blood Credits</div>
+            </div>
+        </div>
+        
+        <div class="action-grid">
+            <a href="{{ url_for('people.request_blood') }}" class="action-card">
+                <div class="action-icon"></div>
+                <h3>Request Blood</h3>
+                <p>Need blood urgently? Create a request</p>
+            </a>
+            
+            <a href="{{ url_for('people.donate_blood') }}" class="action-card">
+                <div class="action-icon"></div>
+                <h3>Donate Blood</h3>
+                <p>View requests and save lives</p>
+            </a>
+            
+            <a href="{{ url_for('people.orders') }}" class="action-card">
+                <div class="action-icon"></div>
+                <h3>Orders & History</h3>
+                <p>View your requests and donations</p>
+            </a>
+            
+            <a href="{{ url_for('people.credits') }}" class="action-card">
+                <div class="action-icon"></div>
+                <h3>Blood Credits</h3>
+                <p>Redeem your rewards</p>
+            </a>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Request location permission on dashboard load
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                fetch('/people/update-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        address: 'Current Location'
+                    })
+                });
+            });
+        }
+    </script>
+</body>
+</html>

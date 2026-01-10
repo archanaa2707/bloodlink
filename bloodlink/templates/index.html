@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodLink - Connecting Donors & Recipients</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="hero">
+        <h1 class="logo">BloodLink</h1>
+        <p class="tagline">Blood donations made simpler, convenient & efficient</p>
+        
+        <div class="portal-container">
+            <div class="portal-card">
+                <div class="icon"></div>
+                <h2>For People</h2>
+                <p>Request blood, donate to save lives, earn rewards</p>
+                <div class="button-group">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
+                    <a href="{{ url_for('auth.signup') }}" class="btn btn-secondary">Sign Up</a>
+                </div>
+            </div>
+            
+            <div class="portal-card">
+                <div class="icon"></div>
+                <h2>For Hospitals</h2>
+                <p>Manage inventory, predict demand, send emergency requests</p>
+                <div class="button-group">
+                    <a href="{{ url_for('hospital.dashboard') }}" class="btn btn-primary">Hospital Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
