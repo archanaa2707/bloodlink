@@ -139,9 +139,9 @@ def generate_summary(predictions):
         summary.append(f"HIGH DEMAND ALERT: Blood types {', '.join(high_demand)} are expected to be in high demand.")
     
     if low_demand:
-        summary.append(f"✓ Adequate supply predicted for: {', '.join(low_demand)}")
+        summary.append(f"Adequate supply predicted for: {', '.join(low_demand)}")
     
     total_predicted = sum(pred['predicted_units'] for pred in predictions.values())
-    summary.append(f"📊 Total predicted demand for next 7 days: {round(total_predicted)} units")
+    summary.append(f"Total predicted demand for next 7 days: {round(total_predicted)} units")
     
     return ' '.join(summary) if summary else "Demand levels are normal across all blood types."
