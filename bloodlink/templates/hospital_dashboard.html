@@ -3,154 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital Dashboard - BloodLink</title>
+    <title>Hospital Dashboard - BloodLink AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary-red: #dc2626; --dark-blue: #1e293b; --bg-gray: #f1f5f9; }
+        body { background-color: var(--bg-gray); font-family: 'Inter', sans-serif; padding: 20px; }
+        .dashboard-header { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgb(0 0 0 / 0.1); margin-bottom: 2rem; }
+        .prediction-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 15px rgb(0 0 0 / 0.1); border-top: 4px solid var(--primary-red); margin-bottom: 20px; }
+        .dept-section { margin-top: 2rem; padding: 10px; border-left: 5px solid var(--primary-red); background: #fff; border-radius: 8px; margin-bottom: 3rem;}
+        .forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; padding: 15px; }
+        .chart-img { width: 100%; height: auto; border-radius: 8px; margin-top: 10px; border: 1px solid #ddd; }
+        .loading-overlay { display: none; text-align: center; padding: 3rem; background: white; border-radius: 12px; margin: 2rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { background: var(--primary-red); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">BloodLink - Hospital Portal</div>
-        <div class="nav-actions">
-            <a href="{{ url_for('index') }}" class="btn btn-sm">Back to Home</a>
-        </div>
-    </nav>
-    
     <div class="container">
-        <h1>Hospital Dashboard</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        {% if not hospital_name %}
-        <div class="form-card">
-            <h2>Hospital Information</h2>
-            <form method="POST" action="{{ url_for('hospital.dashboard') }}" id="hospitalForm">
-                <div class="form-group">
-                    <label>Hospital Name</label>
-                    <input type="text" name="hospital_name" required>
+        <div class="dashboard-header">
+            <h1>Blood Demand Forecasting</h1>          
+            <form id="predictForm" style="margin-top: 20px;">
+                <div style="margin-bottom: 20px;">
+                    <label style="display:block; margin-bottom:8px; font-weight:bold;">Upload Historical CSV/Excel Data:</label>
+                    <input type="file" id="dataFile" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 400px;">
                 </div>
-                
-                <div class="form-group">
-                    <label>Location</label>
-                    <button type="button" class="btn btn-secondary" onclick="getLocation()">Use Current Location</button>
-                    <input type="text" id="address" name="address" readonly required>
-                    <input type="hidden" id="latitude" name="latitude">
-                    <input type="hidden" id="longitude" name="longitude">
-                </div>
-                
-                <div id="map" style="height: 300px; margin: 20px 0; border-radius: 8px;"></div>
-                
-                <button type="submit" class="btn btn-primary btn-block">Save Hospital Info</button>
+                <button type="submit" id="submitBtn" class="btn">Generate Forecast</button>
             </form>
         </div>
-        {% else %}
-        <div class="hospital-actions">
-            <div class="action-section">
-                <h2>Predict Blood Demand</h2>
-                <p>Upload historical data to get AI-powered demand forecasts</p>
-                <form id="predictForm" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label>Upload Data File (CSV or Excel)</label>
-                        <input type="file" id="dataFile" name="file" accept=".csv,.xlsx,.xls" required>
-                        <small>File should contain columns: date, blood_type, units_requested</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Generate Forecast</button>
-                </form>
-                
-                <div id="predictions" style="display: none; margin-top: 30px;">
-                    <h3>Prediction Results</h3>
-                    <div id="summary" class="info-box"></div>
-                    <div id="charts"></div>
-                </div>
-            </div>
-            
-            <div class="action-section">
-                <h2>Emergency Blood Request</h2>
-                <p>Send urgent blood requests to nearby donors</p>
-                <form method="POST" action="{{ url_for('hospital.emergency_request') }}">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Blood Type</label>
-                            <select name="blood_type" required>
-                                <option value="">Select</option>
-                                <option value="A+">A+</option>
-                                <option value="A-">A-</option>
-                                <option value="B+">B+</option>
-                                <option value="B-">B-</option>
-                                <option value="AB+">AB+</option>
-                                <option value="AB-">AB-</option>
-                                <option value="O+">O+</option>
-                                <option value="O-">O-</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Units Needed</label>
-                            <input type="number" name="units" min="1" max="50" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Urgency</label>
-                            <select name="urgency" required>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-danger btn-block">Send Emergency Request</button>
-                </form>
-            </div>
+
+        <div id="loadingState" class="loading-overlay">
+            <h2 style="color: var(--primary-red);">Processing Data...</h2>
+            <p> This may take some time.</p>
         </div>
-        {% endif %}
+
+        <div id="predictions" style="display: none; margin-top: 30px;">
+            <div id="forecastContent"></div>
+        </div>
     </div>
-    
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+
     <script>
-        document.getElementById('predictForm')?.addEventListener('submit', async function(e) {
+        document.getElementById('predictForm').addEventListener('submit', async function(e) {
+            // 1. STOP THE PAGE REFRESH (The most important line)
             e.preventDefault();
             
-            const formData = new FormData();
-            formData.append('file', document.getElementById('dataFile').files[0]);
-            
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loadingState');
+            const output = document.getElementById('predictions');
+            const content = document.getElementById('forecastContent');
+            const fileInput = document.getElementById('dataFile');
+
+            if (!fileInput.files[0]) return alert("Please select a file first.");
+
+            // 2. UI Feedback
             btn.disabled = true;
-            btn.textContent = 'Processing...';
-            
+            btn.innerHTML = 'AI Processing...';
+            loader.style.display = 'block';
+            output.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
             try {
+                // 3. Send data to the new API route
                 const response = await fetch('/hospital/predict-demand', {
                     method: 'POST',
                     body: formData
                 });
                 
                 const result = await response.json();
-                
+
                 if (result.success) {
-                    document.getElementById('predictions').style.display = 'block';
-                    document.getElementById('summary').innerHTML = `<p>${result.summary}</p>`;
+                    let html = '<h2 style="text-align:center; color: var(--dark-blue);">7-Day Demand Forecast Results</h2>';
                     
-                    let chartsHtml = '';
-                    if (result.charts.demand_forecast) {
-                        chartsHtml += `<img src="data:image/png;base64,${result.charts.demand_forecast}" style="max-width: 100%; margin: 20px 0;">`;
+                    for (const [dept, data] of Object.entries(result.departments)) {
+                        html += `
+                            <div class="dept-section">
+                                <h3 style="margin: 0 0 15px 15px;">Department: ${dept}</h3>
+                                <div class="forecast-grid">
+                        `;
+                        
+                        for (const [bt, info] of Object.entries(data.blood_types)) {
+                            const chartId = `${dept}_${bt}`.replace(/ /g, "_");
+                            html += `
+                                <div class="prediction-card">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <h4 style="margin:0; color:var(--primary-red);">Blood Type: ${bt}</h4>
+                                        <span style="font-size:0.8em; background:#e2e8f0; padding:4px 8px; border-radius:4px;">Accuracy: ${info.accuracy}%</span>
+                                    </div>
+                                    <div style="margin:20px 0;">
+                                        <span style="font-size:2.5rem; font-weight:900; color:var(--dark-blue);">${info.predicted_7d}</span>
+                                        <span style="font-weight:bold; color:#64748b;"> UNITS</span>
+                                    </div>
+                                    <img src="data:image/png;base64,${result.charts[chartId]}" class="chart-img">
+                                    <p style="font-size:0.7rem; color:#94a3b8; margin-top:10px; text-align:right;">Model: ${info.model_used}</p>
+                                </div>`;
+                        }
+                        html += `</div></div>`;
                     }
-                    if (result.charts.historical_trend) {
-                        chartsHtml += `<img src="data:image/png;base64,${result.charts.historical_trend}" style="max-width: 100%; margin: 20px 0;">`;
-                    }
-                    document.getElementById('charts').innerHTML = chartsHtml;
+                    content.innerHTML = html;
+                    output.style.display = 'block';
                 } else {
-                    alert('Error: ' + result.error);
+                    alert("Analysis Error: " + result.error);
                 }
-            } catch (error) {
-                alert('Error: ' + error.message);
+            } catch (err) {
+                console.error(err);
+                alert("Fetch failed. Make sure your server is running and the route /hospital/predict-demand exists.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Generate Forecast';
+                loader.style.display = 'none';
             }
-            
-            btn.disabled = false;
-            btn.textContent = 'Generate Forecast';
         });
     </script>
 </body>
